@@ -91,7 +91,8 @@ struct TodoAPIClient: TodoServicing {
 
             guard (200...299).contains(httpResponse.statusCode) else {
                 if let serverError = try? JSONDecoder().decode(ServerErrorResponse.self, from: data) {
-                    throw APIError.serverMessage(serverError.message)
+                    let text = serverError.error ?? serverError.message ?? "Request failed with status \(httpResponse.statusCode)."
+                    throw APIError.serverMessage(text)
                 }
                 throw APIError.serverMessage("Request failed with status \(httpResponse.statusCode).")
             }
@@ -124,5 +125,6 @@ private struct TodoListResponse: Codable {
 }
 
 private struct ServerErrorResponse: Codable {
-    let message: String
+    let message: String?
+    let error: String?
 }
