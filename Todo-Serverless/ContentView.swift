@@ -29,6 +29,7 @@ struct ContentView: View {
 
 private struct CompletedScreen: View {
     @ObservedObject var viewModel: TodoListViewModel
+    @State private var selectedTodo: Todo?
 
     var body: some View {
         ZStack {
@@ -57,14 +58,13 @@ private struct CompletedScreen: View {
                     } else {
                         LazyVStack(spacing: 14) {
                             ForEach(viewModel.completedTodos) { todo in
-                                NavigationLink(value: todo) {
-                                    TodoRowCard(todo: todo, isBusy: viewModel.isBusy(todoID: todo.id), onToggle: {
-                                        Task { await viewModel.toggle(todo: todo) }
-                                    }, onEdit: {
-                                        viewModel.openEdit(todo: todo)
-                                    })
-                                }
-                                .buttonStyle(.plain)
+                                TodoRowCard(todo: todo, isBusy: viewModel.isBusy(todoID: todo.id), onToggle: {
+                                    Task { await viewModel.toggle(todo: todo) }
+                                }, onEdit: {
+                                    viewModel.openEdit(todo: todo)
+                                }, onOpen: {
+                                    selectedTodo = todo
+                                })
                             }
                         }
                     }
@@ -74,7 +74,7 @@ private struct CompletedScreen: View {
                 .padding(.bottom, 24)
             }
         }
-        .navigationDestination(for: Todo.self) { todo in
+        .navigationDestination(item: $selectedTodo) { todo in
             TodoDetailScreen(viewModel: viewModel, todoID: todo.id)
         }
         .sheet(isPresented: $viewModel.isShowingEditor) {

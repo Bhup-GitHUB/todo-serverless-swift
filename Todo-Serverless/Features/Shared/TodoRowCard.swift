@@ -5,6 +5,7 @@ struct TodoRowCard: View {
     let isBusy: Bool
     let onToggle: () -> Void
     let onEdit: () -> Void
+    let onOpen: () -> Void
 
     var body: some View {
         GlassSurface {
@@ -14,6 +15,7 @@ struct TodoRowCard: View {
                         .font(.system(size: 24, weight: .semibold))
                         .foregroundStyle(todo.completed ? AppTheme.secondary : AppTheme.textSecondary)
                 }
+                .buttonStyle(.borderless)
                 .disabled(isBusy)
 
                 VStack(alignment: .leading, spacing: 6) {
@@ -35,9 +37,17 @@ struct TodoRowCard: View {
                     Image(systemName: "pencil")
                         .font(.system(size: 14, weight: .bold))
                 }
-                .buttonStyle(.bordered)
-                .tint(AppTheme.primary)
+                .buttonStyle(.borderless)
                 .disabled(isBusy)
+
+                Button(action: onOpen) {
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundStyle(AppTheme.textSecondary)
+                        .padding(8)
+                        .background(Circle().fill(Color.white.opacity(0.1)))
+                }
+                .buttonStyle(.borderless)
             }
         }
     }

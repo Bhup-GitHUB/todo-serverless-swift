@@ -3,6 +3,7 @@ import SwiftUI
 struct HomeScreen: View {
     @ObservedObject var viewModel: TodoListViewModel
     @State private var animateCards = false
+    @State private var selectedTodo: Todo?
 
     var body: some View {
         ZStack {
@@ -39,7 +40,7 @@ struct HomeScreen: View {
         .sheet(isPresented: $viewModel.isShowingEditor) {
             TodoEditorScreen(viewModel: viewModel)
         }
-        .navigationDestination(for: Todo.self) { todo in
+        .navigationDestination(item: $selectedTodo) { todo in
             TodoDetailScreen(viewModel: viewModel, todoID: todo.id)
         }
         .alert("Something went wrong", isPresented: Binding(get: {
@@ -53,7 +54,7 @@ struct HomeScreen: View {
                 viewModel.errorMessage = nil
             }
             Button("Retry") {
-                Task { await viewModel.loadTodos() }
+                Task { await viewModel.loadTodos(force: true) }
             }
         } message: {
             Text(viewModel.errorMessage ?? "")
@@ -148,17 +149,16 @@ struct HomeScreen: View {
         } else {
             List {
                 ForEach(viewModel.visibleTodos) { todo in
-                    NavigationLink(value: todo) {
-                        TodoRowCard(todo: todo, isBusy: viewModel.isBusy(todoID: todo.id), onToggle: {
-                            Task { await viewModel.toggle(todo: todo) }
-                        }, onEdit: {
-                            viewModel.openEdit(todo: todo)
-                        })
-                        .scaleEffect(animateCards ? 1 : 0.96)
-                        .opacity(animateCards ? 1 : 0.01)
-                        .animation(.spring(response: 0.42, dampingFraction: 0.82).delay(Double(viewModel.visibleTodos.firstIndex(of: todo) ?? 0) * 0.03), value: animateCards)
-                    }
-                    .buttonStyle(.plain)
+                    TodoRowCard(todo: todo, isBusy: viewModel.isBusy(todoID: todo.id), onToggle: {
+                        Task { await viewModel.toggle(todo: todo) }
+                    }, onEdit: {
+                        viewModel.openEdit(todo: todo)
+                    }, onOpen: {
+                        selectedTodo = todo
+                    })
+                    .scaleEffect(animateCards ? 1 : 0.96)
+                    .opacity(animateCards ? 1 : 0.01)
+                    .animation(.spring(response: 0.42, dampingFraction: 0.82).delay(Double(viewModel.visibleTodos.firstIndex(of: todo) ?? 0) * 0.03), value: animateCards)
                     .listRowSeparator(.hidden)
                     .listRowInsets(EdgeInsets(top: 7, leading: 0, bottom: 7, trailing: 0))
                     .listRowBackground(Color.clear)

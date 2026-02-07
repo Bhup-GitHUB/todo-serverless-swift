@@ -21,6 +21,7 @@ final class TodoListViewModel: ObservableObject {
 
     private let service: TodoServicing
     private var busyIDs: Set<String> = []
+    private var hasLoadedTodos = false
 
     init(service: TodoServicing) {
         self.service = service
@@ -66,13 +67,15 @@ final class TodoListViewModel: ObservableObject {
         busyIDs.contains(todoID)
     }
 
-    func loadTodos() async {
+    func loadTodos(force: Bool = false) async {
+        guard force || !hasLoadedTodos else { return }
         isLoading = true
         errorMessage = nil
 
         do {
             let fetched = try await service.fetchTodos()
             todos = sorted(fetched)
+            hasLoadedTodos = true
         } catch {
             errorMessage = friendlyError(error)
         }
@@ -116,7 +119,7 @@ final class TodoListViewModel: ObservableObject {
         todos = sorted(todos)
 
         do {
-            let updated = try await service.updateTodo(id: original.id, title: todos.first(where: { $0.id == original.id })?.title ?? original.title, completed: !original.completed)
+            let updated = try await service.updateTodo(id: original.id, title: nil, completed: !original.completed)
             replace(todo: updated)
         } catch {
             replace(todo: original)

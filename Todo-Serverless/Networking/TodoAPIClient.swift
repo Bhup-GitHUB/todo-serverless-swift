@@ -4,7 +4,7 @@ protocol TodoServicing {
     func fetchTodos() async throws -> [Todo]
     func addTodo(title: String) async throws -> Todo
     func deleteTodo(id: String) async throws
-    func updateTodo(id: String, title: String, completed: Bool) async throws -> Todo
+    func updateTodo(id: String, title: String?, completed: Bool?) async throws -> Todo
 }
 
 enum APIError: LocalizedError {
@@ -64,7 +64,7 @@ struct TodoAPIClient: TodoServicing {
         _ = try await request(path: APIConfig.deleteTodo, method: "DELETE", body: body)
     }
 
-    func updateTodo(id: String, title: String, completed: Bool) async throws -> Todo {
+    func updateTodo(id: String, title: String?, completed: Bool?) async throws -> Todo {
         let body = try JSONEncoder().encode(UpdateTodoRequest(id: id, title: title, completed: completed))
         let data = try await request(path: APIConfig.updateTodo, method: "PUT", body: body)
 
@@ -78,8 +78,11 @@ struct TodoAPIClient: TodoServicing {
     private func request(path: String, method: String, body: Data?) async throws -> Data {
         let cleanPath = path.hasPrefix("/") ? String(path.dropFirst()) : path
         var request = URLRequest(url: APIConfig.baseURL.appendingPathComponent(cleanPath))
+        request.cachePolicy = .reloadIgnoringLocalCacheData
         request.httpMethod = method
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("no-cache, no-store, max-age=0", forHTTPHeaderField: "Cache-Control")
+        request.setValue("no-cache", forHTTPHeaderField: "Pragma")
         request.httpBody = body
 
         do {
@@ -116,8 +119,8 @@ private struct DeleteTodoRequest: Codable {
 
 private struct UpdateTodoRequest: Codable {
     let id: String
-    let title: String
-    let completed: Bool
+    let title: String?
+    let completed: Bool?
 }
 
 private struct TodoListResponse: Codable {
